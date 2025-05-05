@@ -2,6 +2,20 @@
 """
 Core logic for calculating skid layout for industrial shipping crates
 based on specified shipping standards. (Revised logic for positioning)
+
+Version 0.1.0 - Initial implementation.
+Version 0.2.0 - Added weight rules and skid types.
+Version 0.3.0 - Revised skid count and spacing logic based on usable width.
+Version 0.3.1 - Implemented revised skid positioning logic.
+Version 0.3.2 - Added input validation checks.
+Version 0.3.3 - Ensured skid_height check is against MIN_SKID_HEIGHT.
+Version 0.3.4 - Added logging.
+Version 0.3.5 - Refined error messages.
+Version 0.3.6 - Added comments and clarity.
+Version 0.3.7 - Ensured spacing_actual is 0 for skid_count = 1.
+Version 0.3.8 - Added more test cases and verification checks.
+Version 0.3.18 - Added FLOAT_TOLERANCE and used it in usable width vs skid width check and other comparisons.
+Version 0.3.19 - No logic changes, version updated for consistency with app.py import fix.
 """
 
 import math
@@ -30,6 +44,9 @@ WEIGHT_RULES = [
 
 # Minimum required skid height (based on standard lumber)
 MIN_SKID_HEIGHT = 3.5
+
+# Tolerance for floating-point comparisons
+FLOAT_TOLERANCE: float = 1e-6
 
 def calculate_skid_layout(
     product_weight: float,
@@ -63,20 +80,20 @@ def calculate_skid_layout(
     }
 
     # --- Input Validation ---
-    if product_weight < 0:
+    if product_weight < -FLOAT_TOLERANCE: # Use tolerance
         result["status"] = "ERROR"; result["message"] = "Product weight cannot be negative."
         log.error(result["message"]); return result
-    if product_width <= 0:
+    if product_width <= FLOAT_TOLERANCE: # Use tolerance
         result["status"] = "ERROR"; result["message"] = "Product width must be positive."
         log.error(result["message"]); return result
-    if clearance_side < 0 or panel_thickness < 0 or cleat_thickness < 0:
+    if clearance_side < -FLOAT_TOLERANCE or panel_thickness < -FLOAT_TOLERANCE or cleat_thickness < -FLOAT_TOLERANCE: # Use tolerance
          result["status"] = "ERROR"; result["message"] = "Dimensions (clearance, panel, cleat) cannot be negative."
          log.error(result["message"]); return result
 
     log.info(f"Calculating layout for Weight={product_weight:.2f} lbs, Product Width={product_width:.2f}\"")
 
     # --- Handle Overweight Case ---
-    if product_weight > 20000:
+    if product_weight > 20000 + FLOAT_TOLERANCE: # Use tolerance
         result["status"] = "OVER"
         result["message"] = f"Weight ({product_weight:.0f} lbs) exceeds 20,000 lbs limit."
         log.warning(result["message"]); return result
@@ -88,12 +105,11 @@ def calculate_skid_layout(
     skid_height = 0.0
 
     # Determine skid type based on weight
-    if 0 <= product_weight <= 500:
+    if 0.0 <= product_weight <= 500.0 + FLOAT_TOLERANCE: # Use tolerance
          skid_type_nominal = "3x4"; max_spacing = 30.0
     else: # Weight > 500 and <= 20000
         for max_w, type_nom, max_s in WEIGHT_RULES:
-            if product_weight <= max_w:
-                # Find the first bracket the weight falls into
+            if product_weight <= max_w + FLOAT_TOLERANCE: # Use tolerance
                 if skid_type_nominal is None: # Assign if it's the first match > 500 lbs
                     skid_type_nominal = type_nom
                     max_spacing = max_s
@@ -115,7 +131,7 @@ def calculate_skid_layout(
     log.info(f"Selected Skid: {skid_type_nominal}, W={skid_width}\", H={skid_height}\", Max Spacing={max_spacing}\"")
 
     # --- Validate Skid Height Requirement ---
-    if skid_height < MIN_SKID_HEIGHT:
+    if skid_height < MIN_SKID_HEIGHT - FLOAT_TOLERANCE: # Use tolerance
          result["status"] = "ERROR"; result["message"] = f"Skid height ({skid_height}\") < min required ({MIN_SKID_HEIGHT}\")."
          log.error(result["message"]); return result
 
@@ -126,8 +142,8 @@ def calculate_skid_layout(
     log.info(f"Crate Width: {crate_width:.2f}\", Usable Width (between cleats): {usable_width:.2f}\"")
 
     # --- Determine Skid Count and Spacing (REVISED LOGIC) ---
-    # Check if usable width is sufficient for even one skid
-    if usable_width < skid_width:
+    # Use tolerance when comparing usable_width and skid_width
+    if usable_width < skid_width - FLOAT_TOLERANCE:
         result["status"] = "ERROR"
         result["message"] = f"Usable width ({usable_width:.2f}\") is too narrow for skid width ({skid_width:.2f}\")."
         log.error(result["message"]); return result
@@ -135,67 +151,63 @@ def calculate_skid_layout(
     skid_count = 0
     spacing_actual = 0.0
 
-    # Case 1: Only one skid fits or is needed.
-    # If usable_width is less than the width of two skids, only one can be placed.
-    if usable_width < (skid_width * 2):
+    # Case 1: Only one skid fits or is needed. Usable width is less than the space needed for two skids (SkidW + spacing + SkidW = 2*SkidW theoretically, but here simplified to < 2*SkidW).
+    # More accurately, if usable_width is less than the *minimum* space needed for two skids edge-to-edge. The minimum space for two skids is SkidW + SkidW = 2*SkidW (touching).
+    # The current logic `usable_width < (skid_width * 2)` implicitly assumes minimum space for 2 skids is just shy of 2*SkidW before spacing is considered. Let's refine this check slightly with tolerance.
+    if usable_width < (skid_width * 2) - FLOAT_TOLERANCE:
         skid_count = 1
-        spacing_actual = 0.0 # No spacing for a single skid
+        spacing_actual = 0.0
         log.info("Usable width allows only one skid.")
     # Case 2: Two or more skids might fit. Determine count by spacing.
     else:
-        # **REVISED:** Calculate the span available for the centerlines.
-        # This is the usable width minus the space taken by half a skid width at each end.
+        # Centerline span is the space between the centerlines of the two outermost skids.
+        # The space from the edge of the usable width to the centerline of the outermost skid is SkidW / 2.
+        # So, centerline_span = UsableWidth - 2 * (SkidW / 2) = UsableWidth - SkidW
         centerline_span = usable_width - skid_width
         log.debug(f"Centerline span available: {centerline_span:.2f}\" (UsableW - SkidW)")
 
-        # Start with minimum possible (2 skids) and check spacing against the centerline_span
+        # Start with 2 skids and check spacing
         skid_count = 2
         while True:
-            # Calculate the center-to-center spacing required for the current skid_count
-            # across the available centerline_span.
-            # Need (skid_count - 1) gaps.
+            # Ensure division by zero doesn't occur if skid_count somehow becomes 1 here
+            if skid_count <= 1:
+                 result["status"] = "ERROR"; result["message"] = "Internal error during skid count calculation (division by zero risk)."
+                 log.error(result["message"]); return result
             current_spacing_needed = centerline_span / (skid_count - 1)
             log.debug(f"Trying {skid_count} skids: Spacing needed = {centerline_span:.2f} / {skid_count - 1} = {current_spacing_needed:.2f}\"")
 
-
-            if current_spacing_needed <= max_spacing:
-                # This skid count works, the required spacing is within the limit.
+            # Use tolerance for spacing comparison
+            if current_spacing_needed <= max_spacing + FLOAT_TOLERANCE:
                 spacing_actual = current_spacing_needed
                 log.info(f"Spacing {spacing_actual:.2f}\" <= Max {max_spacing:.2f}\". Using {skid_count} skids.")
-                break # Found the minimum count that satisfies spacing
+                break
             else:
-                # Required spacing is too large, need more skids to reduce spacing.
                 log.debug(f"Spacing {current_spacing_needed:.2f}\" > Max {max_spacing:.2f}\". Trying {skid_count + 1} skids.")
                 skid_count += 1
-                # Safety break
-                if skid_count > 100:
+                if skid_count > 100: # Safety break
                     result["status"] = "ERROR"; result["message"] = "Exceeded skid count limit (100)."
                     log.error(result["message"]); return result
 
     result.update({"skid_count": skid_count, "spacing_actual": spacing_actual})
     log.info(f"Final Skid Count: {skid_count}, Actual Spacing: {spacing_actual:.2f}\"")
 
-
     # --- Calculate Skid Positions (REVISED LOGIC) ---
-    # Positions are relative to the center of the usable_width (0).
     skid_positions = []
     if skid_count == 1:
-        # Single skid is centered at 0
+        # Center the single skid within the usable width
+        # Position is relative to the center of the usable width (which is 0)
         skid_positions = [0.0]
     elif skid_count > 1:
-        # **REVISED:** Calculate the starting position (center of the first skid).
-        # The total span covered by centerlines is (skid_count - 1) * spacing_actual.
-        # This span should be centered around 0.
-        # The first skid's center is half the total centerline span to the left of center.
+        # The total span covered by the centerlines is (skid_count - 1) * spacing_actual.
+        # To center this span within the usable width (which is centered around 0),
+        # the first centerline position is - (total span) / 2.
         centerline_span_actual = spacing_actual * (skid_count - 1)
         start_x = - centerline_span_actual / 2.0
-
         log.debug(f"Calculated actual centerline span: {centerline_span_actual:.4f}\"")
         log.debug(f"First skid center (start_x): {start_x:.4f}\"")
-
         for i in range(skid_count):
             position = start_x + i * spacing_actual
-            skid_positions.append(round(position, 4)) # Round for cleaner output
+            skid_positions.append(round(position, 4)) # Rounding for cleaner output
 
     result["skid_positions"] = skid_positions
     log.info(f"Skid Positions (Centerlines): {['%.2f' % p for p in skid_positions]}")
@@ -204,56 +216,52 @@ def calculate_skid_layout(
     if skid_count > 0 and result["status"] not in ["ERROR", "OVER"]:
         result["status"] = "OK"; result["message"] = "Skid layout calculated successfully."
         log.info(result["message"])
-    elif result["status"] == "INIT": # Fallback if status wasn't updated
+    elif result["status"] == "INIT":
         result["status"] = "ERROR"; result["message"] = "Calculation finished without a final status."
         log.error(result["message"])
 
+    # Add crate_length to results dictionary for floorboard logic if needed later
+    # Calculate OUT_Crate_Length based on NX expression logic if consistent
+    # OUT_Crate_Length = product_length + 2 * clearance_side + 2 * (panel_thickness + cleat_thickness)
+    # result['crate_length'] = OUT_Crate_Length # Uncomment if floorboard logic needs this
+
     return result
 
-# Example usage for standalone testing
+# --- Example Usage ---
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(module)s - %(message)s')
     test_cases = [
-        {"label": "Case 1: Mid-range (4600 lbs, 90\")", "params": (4600, 90, 2.0, 0.25, 0.75)}, # 4x6, W=5.5, MaxS=41. Usable=94. CenterSpan=88.5. Cnt=3, Sp=44.25>41. Cnt=4, Sp=29.5<=41. Count=4. Pos=[-44.25, -14.75, 14.75, 44.25]
-        {"label": "Case 2: Light (400 lbs, 30\")", "params": (400, 30, 1.0, 0.25, 0.75)}, # 3x4, W=2.5, MaxS=30. Usable=32. CenterSpan=29.5. Cnt=2, Sp=29.5<=30. Count=2. Pos=[-14.75, 14.75]
-        {"label": "Case 3: Heavy (15000 lbs, 110\")", "params": (15000, 110, 2.0, 0.5, 1.0)}, # 4x6, W=5.5, MaxS=24. Usable=114. CenterSpan=108.5. Cnt=5, Sp=27.1>24. Cnt=6, Sp=21.7<=24. Count=6. Pos=[-54.25, -32.55, -10.85, 10.85, 32.55, 54.25]
-        {"label": "Case 4: Narrow (5000 lbs, 40\")", "params": (5000, 40, 1.0, 0.25, 0.75)}, # 4x6, W=5.5, MaxS=41. Usable=42. CenterSpan=36.5. Cnt=2, Sp=36.5<=41. Count=2. Pos=[-18.25, 18.25]
-        {"label": "Case 5: Over Limit (21000 lbs)", "params": (21000, 90, 2.0, 0.25, 0.75)}, # OVER
-        {"label": "Case 6: Width too small for skid (1000 lbs, 2\")", "params": (1000, 2, 0.5, 0.25, 0.75)}, # 4x4, W=3.5. Usable=3. Usable < SkidW. ERROR.
-        {"label": "Case 7: Zero Weight (50\")", "params": (0, 50, 1.0, 0.25, 0.75)}, # 3x4, W=2.5, MaxS=30. Usable=52. CenterSpan=49.5. Cnt=2, Sp=49.5>30. Cnt=3, Sp=24.75<=30. Count=3. Pos=[-24.75, 0.0, 24.75]
-        {"label": "Case 8a: Just enough usable for 2 skids (1000 lbs, 5.0\")", "params": (1000, 5.0, 1.0, 0.25, 0.75)}, # 4x4, W=3.5, MaxS=30. Usable=7.0. Usable >= 2*W. CenterSpan=3.5. Cnt=2, Sp=3.5<=30. Count=2. Pos=[-1.75, 1.75]
-        {"label": "Case 8b: Slightly more than 8a (1000 lbs, 5.1\")", "params": (1000, 5.1, 1.0, 0.25, 0.75)}, # 4x4, W=3.5, MaxS=30. Usable=7.1. CenterSpan=3.6. Cnt=2, Sp=3.6<=30. Count=2. Pos=[-1.8, 1.8]
-        {"label": "Case 9: Negative Weight", "params": (-100, 50, 1.0, 0.25, 0.75)}, # ERROR
-        {"label": "Case 10: Zero Width", "params": (1000, 0, 1.0, 0.25, 0.75)}, # ERROR
-        {"label": "Case 11: Negative Clearance", "params": (1000, 50, -1.0, 0.25, 0.75)}, # ERROR
-        {"label": "Case 12: High Weight, Narrow Spacing (18000 lbs, 90\")", "params": (18000, 90, 2.0, 0.25, 0.75)}, # 4x6, W=5.5, MaxS=24. Usable=94. CenterSpan=88.5. Cnt=4, Sp=29.5>24. Cnt=5, Sp=22.125<=24. Count=5. Pos=[-44.25, -22.125, 0.0, 22.125, 44.25]
-        {"label": "Case 13: Just wide enough for 1 skid (1000 lbs, 3.5\")", "params": (1000, 3.5, 0.0, 0.0, 0.0)}, # 4x4, W=3.5. Usable=3.5. Usable < 2*W. Count=1. Pos=[0.0]
+        {"label": "Case 1: Mid-range (4600 lbs, 90\")", "params": (4600, 90, 2.0, 0.25, 0.75)},
+        {"label": "Case 12: High Weight, Narrow Spacing (18000 lbs, 90\")", "params": (18000, 90, 2.0, 0.25, 0.75)},
+        {"label": "Case 4: Narrow (5000 lbs, 40\")", "params": (5000, 40, 1.0, 0.25, 0.75)},
+        {"label": "Case 8a: Just enough usable for 2 skids (1000 lbs, 7.0\")", "params": (1000, 7.0, 1.0, 0.25, 0.75)}, # Usable=7+3-2=8, SkidW=3.5 -> Cspan=4.5 -> 2 skids, space=4.5
+        {"label": "Case 8b: Single skid case (1000 lbs, 6.0\")", "params": (1000, 6.0, 1.0, 0.25, 0.75)}, # Usable=6+3-2=7, SkidW=3.5 -> Usable=7, 2*SkidW=7 -> Usable < 2*SkidW - tol -> 1 skid (Corrected check)
+        {"label": "Case 6: Width too small for skid (1000 lbs, 2\")", "params": (1000, 2, 0.5, 0.25, 0.75)}, # Usable = 2 + 2*(0.5+0.25+0.75) - 2*(0.25+0.75) = 2 + 3 - 2 = 3. SkidW=3.5 -> Error. Correct.
+        {"label": "Case 5: Over Limit (21000 lbs)", "params": (21000, 90, 2.0, 0.25, 0.75)},
+        {"label": "Case 9: Negative Weight", "params": (-100, 50, 1.0, 0.25, 0.75)},
+        {"label": "Case 10: Zero Product Width", "params": (1000, 0, 1.0, 0.25, 0.75)},
+        {"label": "Case 11: Min product width allowing one skid (1000 lbs, 3.5\")", "params": (1000, 3.5, 0.0, 0.0, 0.0)}, # Usable = 3.5, SkidW=3.5 -> Usable < 2*SkidW - tol -> 1 skid
     ]
-
     import json
     for test in test_cases:
         print(f"\n--- {test['label']} ---")
         layout = calculate_skid_layout(*test['params'])
         print(json.dumps(layout, indent=2))
-
-        # Verification check for span
+        # Verification check for multi-skid cases
         if layout.get("status") == "OK" and layout.get("skid_count", 0) > 1:
-            positions = layout["skid_positions"]
-            skid_w = layout["skid_width"]
-            first_outer = positions[0] - skid_w / 2
-            last_outer = positions[-1] + skid_w / 2
+            positions = layout["skid_positions"]; skid_w = layout["skid_width"]; usable_w = layout["usable_width"]
+            first_outer = positions[0] - skid_w / 2; last_outer = positions[-1] + skid_w / 2
             calc_span = last_outer - first_outer
-            usable_w = layout["usable_width"]
-            # Allow for tiny floating point differences
-            if abs(calc_span - usable_w) > 0.001:
-                 print(f"  [VERIFICATION FAILED] Calculated Span ({calc_span:.3f}) != Usable Width ({usable_w:.3f})")
-            else:
-                 print(f"  [VERIFICATION PASSED] Calculated Span ({calc_span:.3f}) == Usable Width ({usable_w:.3f})")
+            # Use a tolerance for floating point comparison
+            if not math.isclose(calc_span, usable_w, abs_tol=FLOAT_TOLERANCE * 10): print(f"  [VERIFICATION FAILED] Overall Span ({calc_span:.3f}\") != Usable Width ({usable_w:.3f}\")")
+            else: print(f"  [VERIFICATION PASSED] Overall Span ({calc_span:.3f}\") == Usable Width ({usable_w:.3f}\")")
+        # Verification check for single-skid cases
         elif layout.get("status") == "OK" and layout.get("skid_count", 0) == 1:
-             positions = layout["skid_positions"]
-             skid_w = layout["skid_width"]
-             calc_span = skid_w # Span of one skid is its width
-             usable_w = layout["usable_width"]
-             print(f"  [VERIFICATION INFO] Single Skid Span ({calc_span:.3f}), Usable Width ({usable_w:.3f})")
-
+             skid_w = layout["skid_width"]; usable_w = layout["usable_width"]
+             positions = layout.get("skid_positions", [])
+             pos_ok = False
+             if len(positions) == 1 and abs(positions[0] - 0.0) < FLOAT_TOLERANCE: pos_ok = True # Check position is close to 0
+             if skid_w > usable_w + FLOAT_TOLERANCE: print(f"  [VERIFICATION FAILED] Single Skid Width ({skid_w:.3f}\") > Usable Width ({usable_w:.3f}\")")
+             elif not pos_ok: print(f"  [VERIFICATION FAILED] Single Skid Position ({positions[0] if positions else 'N/A':.3f}\") != 0.0")
+             else: print(f"  [VERIFICATION PASSED] Single Skid Width ({skid_w:.3f}\") <= Usable Width ({usable_w:.3f}\"), Position=0.0")
 

@@ -44,3 +44,5 @@ env/
 .venv/
 .env/
 
+# Commit message file
+commit_message.txt

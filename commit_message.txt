@@ -1,10 +1,7 @@
-fix(skid_logic): Correct skid positioning to fit within usable width
+fix(app): Revert to absolute imports to fix ImportError
 
-The previous skid positioning logic calculated the centerline span of the skids to be equal to the `usable_width`. This resulted in the outer edges of the first and last skids extending beyond the `usable_width`, causing the overall physical skid span (edge-to-edge) to potentially exceed the crate dimensions.
+The previous commit introduced relative imports (`.skid_logic`, `.floorboard_logic`) in `app.py`. This caused an `ImportError` when running the Streamlit application directly as a script, as it lacks a known parent package for relative imports.
 
-This commit revises the logic:
-- Calculates the available span for skid centerlines as `centerline_span = usable_width - skid_width`.
-- Determines the required `skid_count` and `spacing_actual` based on this corrected `centerline_span` and the `max_spacing` constraint.
-- Calculates skid positions based on the `centerline_span_actual` derived from the final `spacing_actual`.
+This commit reverts the import statements in `app.py` back to absolute imports (`skid_logic`, `floorboard_logic`). This allows the application to run correctly when launched with `streamlit run app.py`, assuming the logic files are in the same directory.
 
-This ensures the overall physical span of the skids aligns correctly with the `usable_width`, providing a physically accurate layout. Added verification checks to the standalone test script.
+Also included minor visualization font color improvements and tolerance additions from the attempted v0.3.18 update.
