@@ -1,0 +1,10 @@
+fix(skid_logic): Correct skid positioning to fit within usable width
+
+The previous skid positioning logic calculated the centerline span of the skids to be equal to the `usable_width`. This resulted in the outer edges of the first and last skids extending beyond the `usable_width`, causing the overall physical skid span (edge-to-edge) to potentially exceed the crate dimensions.
+
+This commit revises the logic:
+- Calculates the available span for skid centerlines as `centerline_span = usable_width - skid_width`.
+- Determines the required `skid_count` and `spacing_actual` based on this corrected `centerline_span` and the `max_spacing` constraint.
+- Calculates skid positions based on the `centerline_span_actual` derived from the final `spacing_actual`.
+
+This ensures the overall physical span of the skids aligns correctly with the `usable_width`, providing a physically accurate layout. Added verification checks to the standalone test script.

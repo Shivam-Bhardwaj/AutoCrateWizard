@@ -1,8 +1,46 @@
+# Python cache files
 __pycache__/
 *.pyc
 *.pyo
+*.pyd
+
+# Environment variables
 .env
+*.env
+
+# OS-specific files
 .DS_Store
+Thumbs.db
+
+# Log files
 *.log
-*.idea/
+
+# IDE configuration files
+.idea/
 .vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Streamlit specific (optional, but can be useful)
+.streamlit/secrets.toml
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Notebook checkpoints
+.ipynb_checkpoints
+
+# Virtual environment
+venv/
+env/
+*/venv/
+*/env/
+.venv/
+.env/
+
