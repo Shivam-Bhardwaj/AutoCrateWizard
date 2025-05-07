@@ -1,7 +1,16 @@
-fix(app): Revert to absolute imports to fix ImportError
+feat: Add product height, overall height calc & multi-view cap viz (v0.4.3)
 
-The previous commit introduced relative imports (`.skid_logic`, `.floorboard_logic`) in `app.py`. This caused an `ImportError` when running the Streamlit application directly as a script, as it lacks a known parent package for relative imports.
+This version solidifies the skid and floorboard logic and enhances the cap assembly features.
 
-This commit reverts the import statements in `app.py` back to absolute imports (`skid_logic`, `floorboard_logic`). This allows the application to run correctly when launched with `streamlit run app.py`, assuming the logic files are in the same directory.
+Key changes include:
+- Added "Product Actual Height" and "Clearance Above Product" inputs to the Streamlit sidebar.
+- Implemented the calculation and display of "Overall Crate Height (OD)" in the summary metrics.
+- Enhanced Cap Assembly Visualization in `app.py` by adding tabs for:
+    - Top View (existing detailed plan view).
+    - Front View (new orthographic view along cap width).
+    - Side View (new orthographic view along cap length).
+- Updated the application footer text.
+- Renamed some UI input labels for better clarity (e.g., "Clearance Side (Product W/L)", "Framing Cleat Thickness (Side/End Walls)").
+- Updated README.md and CHANGELOG.md to reflect version 0.4.3 features.
 
-Also included minor visualization font color improvements and tolerance additions from the attempted v0.3.18 update.
+This provides a more comprehensive set of inputs and visualizations for the basic crate structure (skid, floorboard, cap).

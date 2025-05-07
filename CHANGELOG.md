@@ -1,4 +1,47 @@
-# CHANGELOG
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+## [0.4.3] - 2025-05-07
+
+### Added
+- **Cap Assembly Visualization Enhancements (`app.py`):**
+    - Implemented multiple views for the cap assembly using `st.tabs`:
+        - Retained the existing "Top View".
+        - Added a "Front View" (orthographic view along cap width) showing panel and cleat profiles.
+        - Added a "Side View" (orthographic view along cap length) showing panel and cleat profiles.
+    - Created a helper function `create_cap_ortho_view` in `app.py` to generate the front and side views.
+- **Product Actual Height Input (`app.py`):**
+    - Added a slider input for "Product Actual Height" in the sidebar.
+    - Added an input for "Clearance Above Product (to Cap)".
+- **Overall Crate Height Calculation & Display (`app.py`):**
+    - Implemented calculation for `crate_overall_height_external` considering skid height, floorboard thickness, product height, clearances, cap panel, and cap cleat thickness.
+    - Added "Overall Height (OD)" to the "Crate Overall" summary metrics.
+
+### Changed
+- Updated version number to 0.4.3 in `app.py` and documentation.
+- Renamed "Clearance per Side" input to "Clearance Side (Product W/L)" for clarity in `app.py`.
+- Renamed "Cleat Thickness" input to "Framing Cleat Thickness (Side/End Walls)" for clarity in `app.py`.
+- Updated footer text in `app.py` to: "AutoCrate Wizard v0.4.3\nFor inquiries, contact Shivam Bhardwaj."
+- Minor refinements to tolerance usage in visualization sections of `app.py`.
+- Updated `README.md` to reflect new features and input changes.
+
+## [0.4.2] - 2025-05-07
+
+### Fixed
+- **`app.py`:** Fixed `NameError: name 'FLOAT_TOLERANCE' is not defined` in the `format_metric` function by defining `FLOAT_TOLERANCE` at the global scope of `app.py`.
+
+## [0.4.0] - 2025-05-06
+
+### Added
+- **Cap Assembly Logic (`cap_logic.py`):**
+    - Created new `cap_logic.py` module for all top cap calculations.
+    - Implemented `calculate_cap_layout` function.
+- **Integration of Cap Logic into `app.py`**.
+- **Cap-Specific UI Inputs (Sidebar in `app.py`)**.
+- **Display Cap Results (Main Area in `app.py`)**.
+- **Cap Visualization (Main Area in `app.py` - initial top-down view)**.
+- **Cap Details Table (Main Area in `app.py`)**.
 
 ## v0.3.19 - 2025-05-05
 ### Fixed
