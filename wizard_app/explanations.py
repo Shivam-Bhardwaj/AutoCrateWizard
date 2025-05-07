@@ -144,7 +144,10 @@ def get_wall_panel_explanation(panel_data, panel_type_label, overall_dims):
     """Returns the detailed explanation markdown for a wall panel layout, referencing NX expressions."""
     panel_width = format_metric_for_explanation(panel_data.get('panel_width'))
     panel_height = format_metric_for_explanation(panel_data.get('panel_height'))
-    threshold = format_metric_for_explanation(config.INTERMEDIATE_CLEAT_THRESHOLD)
+    threshold = format_metric_for_explanation(config.INTERMEDIATE_CLEAT_THRESHOLD) # This is INTERMEDIATE_CLEAT_ADD_THRESHOLD from wall_logic
+    # Correct threshold to match wall_logic constant if different
+    # threshold = format_metric_for_explanation(wall_logic.INTERMEDIATE_CLEAT_ADD_THRESHOLD)
+
     cleat_spec = panel_data.get('cleat_spec', {})
     cleat_dims = f"{format_metric_for_explanation(cleat_spec.get('thickness'), decimals=2)}x{format_metric_for_explanation(cleat_spec.get('width'))}"
     plywood_thickness = format_metric_for_explanation(panel_data.get('plywood_thickness'))
@@ -152,7 +155,7 @@ def get_wall_panel_explanation(panel_data, panel_type_label, overall_dims):
     # Relevant NX Expressions (Mapped)
     nx_panel_height = f"OUT_Front_Panel_Height = if(OUT_Crate_Height - VAR_Front_Top_Offset <= 96) then ... else ..." # Complex conditional logic
     nx_panel_width_side = f"~ OUT_Crate_Length" # Width of side panel is crate length
-    nx_panel_width_end = f"~ OUT_Crate_Width"   # Width of end panel is crate width
+    nx_panel_width_back = f"~ OUT_Crate_Width"   # Width of back panel is crate width (changed from end)
     nx_cleat_thickness = f"CTRL_Cleat_Thickness"
     nx_panel_thickness = f"CTRL_Panel_Thickness"
     nx_crate_height = f"OUT_Crate_Height = CTRL_Prod_Height + CTRL_Clearance_Top + CTRL_Panel_Thickness + CTRL_Cleat_Thickness + VAR_Skid_Height"
@@ -162,9 +165,9 @@ def get_wall_panel_explanation(panel_data, panel_type_label, overall_dims):
 #### {panel_type_label} Calculation Logic:
 
 1.  **Panel Dimensions:**
-    * Width (`{'Panel Length' if panel_type_label == 'Side Panel' else 'Panel Width'}`) = **`{panel_width}`** (Matches `{nx_panel_width_side if panel_type_label == 'Side Panel' else nx_panel_width_end}`)
+    * Width (`{'Panel Length' if panel_type_label == 'Side Panel' else 'Panel Width'}`) = **`{panel_width}`** (Matches `{nx_panel_width_side if panel_type_label == 'Side Panel' else nx_panel_width_back}`)
     * Height = **`{panel_height}`**. This is the internal clear height.
-        * *Derived from:* `CTRL_Prod_Height` + `CTRL_Clearance_Top`.
+        * *Derived from:* `CTRL_Prod_Height` + `CTRL_Clearance_Top`. (These values come from `overall_dims` passed or `ui_inputs`)
         * *NX Ref:* `{nx_panel_height}` (Note: NX has extra conditional logic based on `{nx_crate_height}` which is not implemented here).
 
 2.  **Materials:**
@@ -172,8 +175,9 @@ def get_wall_panel_explanation(panel_data, panel_type_label, overall_dims):
     * Cleat Size = `{cleat_dims}` (Actual TxW) (*NX Ref:* `{nx_cleat_thickness}` x Width). (Note: Python uses default, NX might vary).
 
 3.  **Cleat Placement:**
-    * **Edge Cleats:** Placed along all four edges. Configuration depends on Side/End type (ref Fig 7-4 in spec 0251-70054).
+    * **Edge Cleats:** Placed along all four edges. Configuration depends on Side/Back type (ref Fig 7-4 in spec 0251-70054).
     * **Intermediate Cleats:** (Simplified Python Logic) A central vertical cleat added if panel width > `{threshold}`. A central horizontal cleat added if panel height > `{threshold}`. (Full spec uses spacing rules, ref Table 7-2).
+    * **Plywood Splicing:** If panel width > `{config.PLYWOOD_STD_WIDTH}"` or panel height > `{config.PLYWOOD_STD_HEIGHT}"`, plywood is spliced. Splice cleats are added along join lines.
 """
 
 # --- Top Panel Explanation ---
@@ -181,7 +185,12 @@ def get_top_panel_explanation(top_panel_results, ui_inputs):
     """Returns the detailed explanation markdown for the top panel layout, referencing NX expressions."""
     panel_w = format_metric_for_explanation(top_panel_results.get('cap_panel_width'))
     panel_l = format_metric_for_explanation(top_panel_results.get('cap_panel_length'))
+    # Use the input value for "Max Spacing" from ui_inputs
     max_spacing_input_val = format_metric_for_explanation(ui_inputs.get('max_top_cleat_spacing'))
+    # Also show the value actually used by cap_logic if it differs or for verification
+    # max_spacing_used_in_calc = format_metric_for_explanation(top_panel_results.get('max_allowed_cleat_spacing_used'))
+
+
     long_cleats = top_panel_results.get("longitudinal_cleats", {})
     trans_cleats = top_panel_results.get("transverse_cleats", {})
     long_spacing = format_metric_for_explanation(long_cleats.get("actual_spacing"))
@@ -208,13 +217,13 @@ def get_top_panel_explanation(top_panel_results, ui_inputs):
 2.  **Cleat Size:** `{cleat_dims}` (Actual TxW) (*NX Ref:* `{nx_cleat_thickness}` x Width).
 
 3.  **Cleat Calculation (Longitudinal - running along Length):**
-    * Calculated based on Panel Width (`{panel_w}`) and Max Spacing (`{max_spacing}`).
-    * Count = `{long_cleats.get("count", "N/A")}`. Spacing = `{long_spacing}`.
+    * Calculated based on Panel Width (`{panel_w}`) and Max Spacing input (`{max_spacing_input_val}`).
+    * Count = `{long_cleats.get("count", "N/A")}`. Actual Spacing (C-C) = `{long_spacing}`.
 
 4.  **Cleat Calculation (Transverse - running along Width):**
-    * Calculated based on Panel Length (`{panel_l}`) and Max Spacing (`{max_spacing}`).
-    * Count = `{trans_cleats.get("count", "N/A")}`. Spacing = `{trans_spacing}`.
-    * *Rule:* Minimum 2 transverse cleats enforced if panel length allows.
+    * Calculated based on Panel Length (`{panel_l}`) and Max Spacing input (`{max_spacing_input_val}`).
+    * Count = `{trans_cleats.get("count", "N/A")}`. Actual Spacing (C-C) = `{trans_spacing}`.
+    * *Rule:* Minimum 2 transverse cleats enforced if panel length allows for two edge cleats.
 
 5.  **Positions:** Cleat centerlines shown relative to the center (0.0) of the panel dimension they span across.
 """
