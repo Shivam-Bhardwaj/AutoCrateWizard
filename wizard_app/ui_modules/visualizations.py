@@ -8,8 +8,14 @@ import plotly.graph_objects as go
 import math
 import logging
 # Use absolute imports within the package
-from wizard_app import config
-from wizard_app import explanations # Import explanations
+# Ensure config and explanations are correctly imported relative to the package root
+try:
+    from wizard_app import config
+    from wizard_app import explanations # Import explanations
+except ImportError:
+    # Fallback if running script directly in a way that package structure isn't recognized
+    import config
+    import explanations
 
 log = logging.getLogger(__name__)
 
@@ -237,4 +243,3 @@ def display_top_panel_visualization(top_panel_results, max_top_cleat_spacing_ui)
     # elif not cap_logic_available: st.info("Top Panel logic not available.") # Redundant check
     elif not top_panel_results or top_panel_results.get("status") not in ["OK","WARNING"]: st.info(f"Top Panel schematic needs OK/Warning. Got: {top_panel_results.get('status') if top_panel_results else 'N/A'}")
     else: st.info("Enter params for Top Panel schematic.")
-
