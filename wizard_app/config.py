@@ -2,13 +2,13 @@
 """
 Configuration file for AutoCrate Wizard.
 Contains shared constants, rules, and default values.
-Version 0.4.14
+Version 0.4.16 / Commit 841d1c0 State
 """
 import math
 
 # --- General Constants ---
 FLOAT_TOLERANCE: float = 1e-6
-VERSION = "0.4.14" # App version
+VERSION = "0.4.16" # App version
 
 # --- Skid Logic Constants ---
 SKID_DIMENSIONS: dict = { "3x4": (2.5, 3.5), "4x4": (3.5, 3.5), "4x6": (5.5, 3.5) }
@@ -29,7 +29,13 @@ DEFAULT_CLEAT_NOMINAL_THICKNESS: float = 0.75
 DEFAULT_CLEAT_NOMINAL_WIDTH: float = 3.5
 WALL_PLYWOOD_THICKNESS_MIN: float = 0.25
 DEFAULT_WALL_PLYWOOD_THICKNESS: float = 0.25
-INTERMEDIATE_CLEAT_THRESHOLD: float = 48.0
+INTERMEDIATE_CLEAT_THRESHOLD: float = 48.0 # Simplified threshold before refined spacing
+MAX_INTERMEDIATE_CLEAT_SPACING = 24.0 # Refined spacing target
+
+# Standard Plywood dimensions for splicing checks
+PLYWOOD_STD_WIDTH = 48.0
+PLYWOOD_STD_HEIGHT = 96.0
+
 
 # --- App Constants ---
 STANDARD_FLOORBOARD_LUMBER_ACTUAL_THICKNESS: float = 1.5
@@ -52,12 +58,12 @@ CAP_CLEAT_COLOR_VIZ: str = "#A0522D" # Sienna
 SKID_COLOR_VIZ: str = "#8B4513" # SaddleBrown
 SKID_OUTLINE_COLOR_VIZ: str = "#654321" # Darker Brown
 FLOORBOARD_STD_COLOR_VIZ: str = "#D2B48C" # Tan (Light Brown)
-# Changed custom board color to be distinct
 FLOORBOARD_CUSTOM_COLOR_VIZ: str = "#808080" # Gray
 FLOORBOARD_OUTLINE_COLOR_VIZ: str = "#505050" # Dark Gray outline for boards
 GAP_COLOR_VIZ: str = "rgba(173, 216, 230, 0.5)" # Light Blue
+SPACER_COLOR_VIZ: str = "rgba(211, 211, 211, 0.6)" # Light gray for spacers
 
-OUTLINE_COLOR: str = "#404040" # Darker Gray for general outlines
+OUTLINE_COLOR: str = "#404040"
 CLEAT_FONT_COLOR: str = "white"
 DIM_ANNOT_COLOR: str = "darkblue"
-LEGEND_FONT_COLOR: str = "#333333" # Dark Gray for legend text
+LEGEND_FONT_COLOR: str = "#333333"
