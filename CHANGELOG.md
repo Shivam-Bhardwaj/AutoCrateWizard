@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.3] - 2025-05-08 
+
+### Added
+
+- **Regenerate Crate Button:** Added a primary "Regenerate Crate" button to the top of the sidebar (`wizard_app/ui_modules/sidebar.py`). 
+
+### Changed
+- **Calculation Trigger:** Core layout calculations (Skid, Floor, Wall, Cap) and display updates in the main app (`wizard_app/app.py`) are now primarily triggered only by the "Regenerate Crate" button press or on the initial application load. - **Sidebar Layout:** Optimized sidebar UI (`wizard_app/ui_modules/sidebar.py`) by grouping less frequently used options ("Construction Details", "Floorboard Options", "Top Panel Options") into collapsible `st.expander` sections. - **Session State Handling:** Refined session state management for sidebar inputs (`wizard_app/ui_modules/sidebar.py`) using explicit widget keys and session state value keys for increased robustness, especially for `st.number_input` and `st.multiselect`. - **Plotly Chart Interaction:** Disabled default zoom and pan functionality on all Plotly schematic views (`wizard_app/ui_modules/visualizations.py`) by setting `fixedrange=True` for axes. ### Fixed
+- **Input Synchronization:** Improved synchronization logic within the `input_slider_combo` helper function (`wizard_app/ui_modules/sidebar.py`) to ensure slider and number input values remain consistent using session state. ```
+
+
 ## [0.6.0] - 2025-05-07
 
 ### Added
