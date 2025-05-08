@@ -2,6 +2,37 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.0] - 2025-05-07
+
+### Added
+
+-   **Base Assembly Visualization (`visualizations.py`, `app.py`):** Implemented multi-view (Top XY, Front XZ, Side YZ) orthographic display for the combined Skid and Floorboard assembly, showing components in context using side-by-side columns. [cite: 1]
+-   **Detailed Floorboard Side View:** The Base Assembly Side View now renders individual floorboard profiles and the center gap, illustrating the layout along the crate length.
+-   **Wall Assembly Visualization (`visualizations.py`, `app.py`):** Implemented multi-view (Front XZ, Profile ZY) display for Side and Back wall panel assemblies.
+-   **Top Panel Assembly Visualization (`visualizations.py`, `app.py`):** Implemented multi-view (Front XY, Profile YZ) display for the Top Panel (Cap) assembly.
+-   **Variable Annotations:** Added key Python variable names (from results dictionaries) alongside dimension values in schematic annotations to aid mapping logic to visuals.
+-   **Local BOM Table (`app.py`):** Integrated BOM data compilation directly into `app.py` based on assembly structure (reflecting production drawing examples) and displayed results using `st.dataframe`. [cite: 8, 30, 166]
+-   **ASTM Standard Context (`README.md`):** Added section outlining relevant ASTM standards (D6199, D6251, D6039, D7478) that inform the design logic, based on research document. [cite: 1]
+
+### Changed
+
+-   **Code Structure:** Solidified refactoring into UI modules (`ui_modules/`). BOM logic now local to `app.py` (removing `bom_utils.py`).
+-   **Visualization Functionality (`visualizations.py`):** Separated Plotly figure *creation* logic into internal helper functions (`_create_..._fig`) from figure *display* logic (`display_...`).
+-   **Axis/Font Styling (`visualizations.py`, `config.py`):** Visualizations now show coordinate axes (X, Y, Z labels based on view) with zero lines but no grid lines. Standardized font sizes and ensured dark font colors for better readability.
+-   **Floorboard Visualization Logic (`visualizations.py`):** Corrected X-axis alignment to match skid span and Y-axis positioning to include wall offsets in the Base Assembly Top View.
+-   **Skid Visualization Logic (`visualizations.py`):** Replaced standalone skid view with integrated Base Assembly views (Front XZ shows skid profiles).
+-   **Version:** Updated version to 0.6.0 in `config.py`.
+
+### Removed
+
+-   **PDF Generation (`app.py`):** Removed all PDF generation functionality (including image export via Kaleido and FPDF2 usage, buttons, session state) due to performance/stability issues. BOM is now displayed as a table only.
+-   **`bom_utils.py`:** File deleted as logic moved into `app.py`.
+
+### Fixed
+
+-   Resolved various `ImportError`, `NameError`, `AttributeError`, and `IndentationError` issues related to module loading, session state, and code structure encountered during previous development iterations.
+-   Corrected data handling in `details.py` to prevent `pyarrow` errors when displaying tables with missing numeric values.
+
 ## [0.4.3] - 2025-05-07
 
 ### Added
