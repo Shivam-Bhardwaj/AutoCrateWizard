@@ -2,6 +2,40 @@
 
 All notable changes to this project will be documented in this file.
 
+## [UNRELEASED] - 2025-05-09
+
+### Added
+- **Decal Placement System:**
+    - Implemented rule-based decal placement logic in `wizard_app/wall_logic.py` based on specifications from `wizard_app/config.py` (for Fragile, Handling, CoG symbols).
+    - Decals are now rendered on wall panel schematics in `wizard_app/ui_modules/visualizations.py`.
+    - `wizard_app/app.py` now passes necessary overall crate height to wall logic for decal rule processing.
+- **Klimp Fastener Visualization (Placeholder):**
+    - Added initial logic in `wizard_app/wall_logic.py` to calculate placeholder positions for Klimp fasteners on the vertical edges of End Panels (Front/Back Assemblies).
+    - Implemented rendering of these Klimps as simple shapes in `wizard_app/ui_modules/visualizations.py`.
+- **Improved Visualization Legends:**
+    - Updated legend names across all schematics in `wizard_app/ui_modules/visualizations.py` to be more descriptive and user-friendly (e.g., "Plywood Sheathing", "Framing Cleat").
+
+### Changed
+- **UI Interaction Model:**
+    - Input changes in `wizard_app/app.py` (sliders, number inputs, multiselects) now mark visuals as stale rather than triggering immediate full recalculations.
+    - The "Regenerate" button is the primary trigger for data processing and visualization updates, leading to a more static and controlled UI experience.
+- **Schematics Display Order:**
+    - Reorganized the display order of assembly schematics in `wizard_app/app.py` to: Base Assembly, Front Assembly, Back Plate Assembly, Side Plate Assembly, Top Plate Assembly.
+- **Visualization Interactivity & Clarity:**
+    - Re-enabled zoom and pan capabilities for Plotly charts by setting `fixedrange=False` in `wizard_app/ui_modules/visualizations.py`.
+    - Increased default padding around plotted elements in `wizard_app/ui_modules/visualizations.py` to reduce text overlap and improve readability.
+- **Wall Logic:**
+    - Ensured the `orientation` key is correctly added to cleat segments in `wizard_app/wall_logic.py` for accurate visualization.
+
+### Fixed
+- **Application Stability (`app.py`):**
+    - Removed a redundant UI display block.
+    - Resolved two `SyntaxError`s within the Bill of Materials compilation logic (`compile_bom_data_local`).
+    - Fixed `streamlit.errors.StreamlitDuplicateElementId` by adding unique `key` arguments to `st.plotly_chart` calls.
+- **Visualization Rendering (`visualizations.py`):**
+    - Corrected multiple `NameError` exceptions caused by missing or improperly scoped helper functions and constants.
+    - Fixed a `ValueError` related to an invalid `layer` property ("top" changed to "above") for Klimp fastener shapes.
+
 ## [0.6.3] - 2025-05-08 
 
 ### Fixed
