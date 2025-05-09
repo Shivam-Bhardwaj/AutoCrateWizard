@@ -1,9 +1,1 @@
-Fix: Remove HTML styling from metric labels for readability
-
-Removes custom HTML span-based styling (NX-style labels) from the
-metrics display in `wizard_app/ui_modules/metrics.py`.
-
-This change addresses an issue where HTML tags were being rendered as
-plain text and CSS was appearing malformed in the "Calculation Summary"
-output. Metric labels are now plain text (group titles remain bold
-via Markdown) to ensure they are correctly displayed and readable.
+Fix: UI 
