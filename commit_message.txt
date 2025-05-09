@@ -1,1 +1,21 @@
-Fix: UI 
+feat: Implement decals, Klimps, and enhance UI/Viz stability
+
+This commit introduces several new features and improvements:
+
+- **Features:**
+    - Rule-based decal placement logic and visualization on wall panels.
+    - Placeholder visualization for Klimp fasteners on end panel edges.
+- **UI/UX Enhancements:**
+    - "Regenerate" button is now the primary trigger for calculations, making the UI more static and responsive to input changes.
+    - Schematics display order updated to: Base, Front, Back, Side, Top.
+    - Plotly charts now allow zoom/pan, and initial padding is increased to improve text legibility.
+    - Legend names in visualizations are more descriptive.
+- **Bug Fixes:**
+    - Resolved `SyntaxError`s in `app.py` related to BOM compilation.
+    - Fixed `StreamlitDuplicateElementId` error by adding unique keys to `plotly_chart` calls in `app.py`.
+    - Corrected `NameError`s in `visualizations.py` by ensuring proper definition and scoping of helper functions and constants.
+    - Fixed `ValueError` for Plotly shape `layer` property in `visualizations.py` (Klimp rendering).
+    - Ensured `orientation` key is correctly passed for cleat segments from `wall_logic.py` to `visualizations.py`.
+- **Code Structure:**
+    - Removed redundant display logic block from `app.py`.
+    - Passed `overall_crate_actual_height` to wall panel logic for accurate decal rule application.

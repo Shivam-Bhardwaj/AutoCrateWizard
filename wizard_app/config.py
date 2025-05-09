@@ -4,6 +4,7 @@ Configuration file for AutoCrate Wizard.
 Contains shared constants, rules, and default values.
 Incorporates styling constants for visualizations.
 Version 0.6.0
+MODIFIED: Added DECAL_RULES
 """
 import math
 
@@ -32,8 +33,8 @@ DEFAULT_CLEAT_NOMINAL_THICKNESS: float = 0.75
 DEFAULT_CLEAT_NOMINAL_WIDTH: float = 3.5
 WALL_PLYWOOD_THICKNESS_MIN: float = 0.25
 DEFAULT_WALL_PLYWOOD_THICKNESS: float = 0.25
-INTERMEDIATE_CLEAT_THRESHOLD: float = 48.0
-MAX_INTERMEDIATE_CLEAT_SPACING = 24.0
+INTERMEDIATE_CLEAT_THRESHOLD: float = 48.0 # This seems to be a general threshold
+MAX_INTERMEDIATE_CLEAT_SPACING = 24.0 # Specific max spacing for intermediate cleats
 PLYWOOD_STD_WIDTH = 48.0
 PLYWOOD_STD_HEIGHT = 96.0
 
@@ -47,8 +48,62 @@ CUSTOM_NARROW_OPTION_TEXT_UI: str = "Use Custom Narrow Board (Fill < 5.5\")"
 ALL_LUMBER_OPTIONS_UI: list = sorted(list(ALL_STANDARD_FLOORBOARDS.keys())) + [CUSTOM_NARROW_OPTION_TEXT_UI]
 DEFAULT_UI_LUMBER_SELECTION_APP: list = DEFAULT_STANDARD_LUMBER_NOMINALS_UI + [CUSTOM_NARROW_OPTION_TEXT_UI]
 
+# --- Decal Logic (Task 3) ---
+# For dimensions and text, using placeholders. Visualizations will interpret these.
+# Panel height for Fragile/Handling dimension choice. Overall crate height for CoG vertical location.
+DECAL_RULES = {
+    "fragile": {
+        "id": "fragile",
+        "text_content": "FRAGILE", # Text to display or identifier for a symbol
+        "dimensions_panel_h_small_thresh": 73.0, # Panel height threshold
+        "dimensions_small": {"width": 8.00, "height": 2.31},
+        "dimensions_large": {"width": 12.00, "height": 3.50},
+        "angle": 10,
+        "horizontal_placement": "center_panel_width",
+        "vertical_placement": "center_upper_half_panel_height", # Center of the upper half
+        "apply_to_panels": ["side", "end"], # Apply to side and end panels
+        "count_per_panel": 1 # One per specified panel face
+    },
+    "handling_horizontal": {
+        "id": "handling_horizontal",
+        "text_content": "↑☂<y_bin_338>↑", # Placeholder for handling symbols
+        "dimensions_panel_h_small_thresh": 37.0, # Panel height threshold
+        "dimensions_small": {"width": 3.00, "height": 8.25}, # Note: image shows WxH, but symbols are vertical
+        "dimensions_large": {"width": 4.00, "height": 11.00},# Assuming these are overall bounding box of symbols
+        "angle": 0,
+        "horizontal_placement": "upper_right_corner_panel_width", # Relative to panel
+        "vertical_placement": "upper_right_corner_panel_height", # Relative to panel
+        "apply_to_panels": ["side", "end"],
+        "count_per_panel": 1,
+        "notes": "Takes priority over vertical if space permits between cleats. Locate on upper right corner."
+    },
+    "cog": {
+        "id": "cog",
+        "text_content": "⊕", # Placeholder for CoG symbol
+        "dimensions": {"width": 3.00, "height": 3.00},
+        "angle": 0,
+        "horizontal_placement": "center_panel_width", # Typically centered on panel width
+        # Vertical placement depends on OVERALL CRATE HEIGHT, applied to panel's vertical axis
+        "vertical_placement_rules_crate_height": [
+            {"max_crate_h": 37.0, "method": "mid_panel_height_relative_to_crate_mid"},
+            {"min_crate_h": 37.0, "max_crate_h": 73.0, "offset_from_crate_mid": 4.0},
+            {"min_crate_h": 73.0, "max_crate_h": 120.0, "offset_from_crate_mid": 8.0},
+            {"min_crate_h": 120.0, "offset_from_crate_mid": 12.0}
+        ],
+        "apply_to_panels": ["side", "end"], # Applied to each specified panel face
+        "count_per_panel": 1,
+        "notes": "Apply CoG at center of balance. If stencil lands partially on a cleat it is okay to add material."
+    }
+}
+# Default styling for decals if not specified in rule (can be overridden in rule)
+DEFAULT_DECAL_BACKGROUND_COLOR = 'rgba(255, 255, 224, 0.7)' # Light yellow, semi-transparent
+DEFAULT_DECAL_TEXT_COLOR = 'rgba(0, 0, 0, 1)'       # Black
+DEFAULT_DECAL_FONT_SIZE = 12
+DEFAULT_DECAL_BORDER_COLOR = 'rgba(128, 128, 128, 0.7)' # Grey border
+DEFAULT_DECAL_BORDER_WIDTH = 1
+
+
 # --- Visualization Colors & Styles ---
-# [ Keep all visualization color/font constants as defined previously ]
 PRODUCT_BOX_COLOR_VIZ: str = "rgba(0, 128, 0, 0.2)"; PRODUCT_BOX_OUTLINE_VIZ: str = "rgba(0, 100, 0, 0.6)"
 WALL_PANEL_COLOR_VIZ: str = "#F5F5DC"; WALL_CLEAT_COLOR_VIZ: str = "#A0522D"
 CAP_PANEL_COLOR_VIZ: str = "#E0E0E0"; CAP_CLEAT_COLOR_VIZ: str = "#A0522D"
