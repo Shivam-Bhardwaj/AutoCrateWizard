@@ -4,6 +4,7 @@ Handles the generation and display of layout schematics for AutoCrate Wizard.
 Provides orthographic views for Base, Wall, and Top assemblies.
 Uses centralized styling, coordinate systems, and includes variable annotations.
 Charts have fixed range (no zoom/pan by default).
+Display functions now primarily generate and return figure objects.
 """
 import streamlit as st
 import plotly.graph_objects as go
@@ -31,8 +32,10 @@ except ImportError:
 
 log = logging.getLogger(__name__)
 
+# --- Core Plotting Function (create_schematic_view - unchanged from last working version with fixedrange=True) ---
 def create_schematic_view(title, width_hint, height_hint, components=[], annotations=[],
                           xlabel="X (inches)", ylabel="Y (inches)"):
+    # ... (exact same implementation as the last working version with fixedrange=True)
     fig = go.Figure()
     legend_items_added = set()
     min_x_data, max_x_data = float('inf'), float('-inf')
@@ -105,13 +108,13 @@ def create_schematic_view(title, width_hint, height_hint, components=[], annotat
         xaxis=dict(
             range=x_range, showgrid=False, zeroline=True, zerolinewidth=1, zerolinecolor=config.AXIS_ZERO_LINE_COLOR,
             showticklabels=True, tickfont=dict(size=config.TICK_LABEL_FONT_SIZE, color=config.COMPONENT_FONT_COLOR_DARK),
-            visible=True, fixedrange=True,  # Ensure fixedrange is True
+            visible=True, fixedrange=True,
             title_text=xlabel, title_font=dict(size=config.AXIS_LABEL_FONT_SIZE, color=config.COMPONENT_FONT_COLOR_DARK)
         ),
         yaxis=dict(
             range=y_range, showgrid=False, zeroline=True, zerolinewidth=1, zerolinecolor=config.AXIS_ZERO_LINE_COLOR,
             showticklabels=True, tickfont=dict(size=config.TICK_LABEL_FONT_SIZE, color=config.COMPONENT_FONT_COLOR_DARK),
-            visible=True, fixedrange=True,  # Ensure fixedrange is True
+            visible=True, fixedrange=True,
             scaleanchor="x", scaleratio=1,
             title_text=ylabel, title_font=dict(size=config.AXIS_LABEL_FONT_SIZE, color=config.COMPONENT_FONT_COLOR_DARK)
         ),
@@ -123,22 +126,12 @@ def create_schematic_view(title, width_hint, height_hint, components=[], annotat
     )
     return fig
 
-# --- Helper functions (_create_panel_assembly_figure, etc.) and Display functions ---
-# These functions remain unchanged from your provided `visualizations.py` as they call the
-# core `create_schematic_view` function above for the actual plot generation.
-# I will omit them here for brevity but assume they are the same as in the file provided previously.
-# Make sure the provided _create_panel_assembly_figure and other display functions are correctly calling create_schematic_view.
-# If the issue with autoscale persists, it would imply something deeper in how Plotly handles these specific chart types,
-# or if the `create_schematic_view` is being bypassed or its layout overridden later.
-
-# (Rest of the visualizations.py code: _create_panel_assembly_figure, _create_base_top_view_fig, _create_base_front_view_fig, _create_base_side_view_fig, display_base_assembly_views, display_wall_assembly, display_top_panel_assembly)
-# For brevity, the rest of the visualizations.py code, which includes helper functions for creating specific views
-# and functions for displaying them, is omitted here but assumed to be the version from your previously uploaded file.
-# The key change for `fixedrange` is in the `create_schematic_view` function above.
-# Ensure all calls to create plots eventually use this modified `create_schematic_view`.
-
-# --- Figure CREATION Helper Functions ---
+# --- Figure CREATION Helper Functions (_create_panel_assembly_figure, _create_base_top_view_fig, etc. - unchanged) ---
+# These functions (_create_panel_assembly_figure, _create_base_top_view_fig, 
+# _create_base_front_view_fig, _create_base_side_view_fig) remain as they were in the user-provided file.
+# They are responsible for defining the components and annotations for each specific view and calling `create_schematic_view`.
 def _create_panel_assembly_figure(view_type, panel_data, panel_label_base="Panel"):
+    # ... (exact same implementation as in the user-provided file)
     if not panel_data: return None, f"{panel_label_base} {view_type} data invalid."
     is_top_panel="cap_panel_width" in panel_data; plywood_pieces=[];
     if is_top_panel:
@@ -195,6 +188,7 @@ def _create_panel_assembly_figure(view_type, panel_data, panel_label_base="Panel
     return fig, None
 
 def _create_base_top_view_fig(skid_results, floor_results, overall_dims, ui_inputs):
+    # ... (exact same implementation as in the user-provided file)
     try:
         panel_thickness = ui_inputs.get('panel_thickness', config.DEFAULT_PANEL_THICKNESS_UI); wall_cleat_thickness = ui_inputs.get('wall_cleat_thickness', config.DEFAULT_CLEAT_NOMINAL_THICKNESS); wall_assembly_offset = panel_thickness + wall_cleat_thickness
         skid_w = skid_results.get('skid_width'); skid_x_positions = skid_results.get('skid_positions'); overall_skid_span = overall_dims.get('overall_skid_span')
@@ -228,6 +222,7 @@ def _create_base_top_view_fig(skid_results, floor_results, overall_dims, ui_inpu
     except Exception as e: log.error("Failed to create Base Top View figure", exc_info=True); return None
 
 def _create_base_front_view_fig(skid_results, floor_results, overall_dims):
+    # ... (exact same implementation as in the user-provided file)
     try:
         skid_w = skid_results.get('skid_width'); skid_h = skid_results.get('skid_height'); skid_x_positions = skid_results.get('skid_positions'); overall_skid_span = overall_dims.get('overall_skid_span'); floorboard_thick = config.STANDARD_FLOORBOARD_LUMBER_ACTUAL_THICKNESS
         if not all([skid_w is not None, skid_h is not None, skid_x_positions is not None, overall_skid_span is not None]): raise ValueError("Missing dimensions")
@@ -247,6 +242,7 @@ def _create_base_front_view_fig(skid_results, floor_results, overall_dims):
     except Exception as e: log.error("Failed to create Base Front View figure", exc_info=True); return None
 
 def _create_base_side_view_fig(skid_results, floor_results, overall_dims, ui_inputs):
+    # ... (exact same implementation as in the user-provided file)
     try:
         panel_thickness = ui_inputs.get('panel_thickness', config.DEFAULT_PANEL_THICKNESS_UI); wall_cleat_thickness = ui_inputs.get('wall_cleat_thickness', config.DEFAULT_CLEAT_NOMINAL_THICKNESS); wall_assembly_offset = panel_thickness + wall_cleat_thickness
         skid_h = skid_results.get('skid_height'); floorboard_thick = config.STANDARD_FLOORBOARD_LUMBER_ACTUAL_THICKNESS; floorboard_layout_span = floor_results.get("target_span_along_length"); all_floorboards = floor_results.get("floorboards", []); fb_center_gap_viz = floor_results.get("center_gap", 0.0); crate_length = overall_dims.get('length')
@@ -280,75 +276,101 @@ def _create_base_side_view_fig(skid_results, floor_results, overall_dims, ui_inp
         return fig
     except Exception as e: log.error("Failed to create Base Side View figure", exc_info=True); return None
 
-# --- DISPLAY Functions ---
-def display_base_assembly_views(skid_results, floor_results, wall_results, overall_dims, ui_inputs):
-    st.divider(); st.subheader("⚙️ BASE ASSEMBLY (Skids + Floorboards)")
-    skid_status = skid_results.get("status", "UNKNOWN"); floor_status = floor_results.get("status", "UNKNOWN") if floor_results else "NOT RUN"
-    if skid_status != "OK": st.info("Base Assembly visualization requires 'OK' skid status."); return
-    if floor_status not in ["OK", "WARNING"]: st.info(f"Base Assembly requires 'OK'/'WARNING' floorboard status (Current: {floor_status})."); return
+
+# --- FIGURE GENERATION Functions (New Structure) ---
+
+def generate_base_assembly_figures(skid_results, floor_results, wall_results, overall_dims, ui_inputs):
+    """
+    Generates and returns Plotly figure objects for Base Assembly views.
+    Does NOT display them.
+    """
+    fig_top = None
+    fig_front = None
+    fig_side = None
+
+    skid_status = skid_results.get("status", "UNKNOWN")
+    floor_status = floor_results.get("status", "UNKNOWN") if floor_results else "NOT RUN"
+
+    if skid_status != "OK":
+        log.warning("Base Assembly figures not generated: Skid status not OK.")
+        return None, None, None
+    if floor_status not in ["OK", "WARNING"]:
+        log.warning(f"Base Assembly figures not generated: Floorboard status not OK/WARNING (is {floor_status}).")
+        return None, None, None
+    
     try:
         fig_top = _create_base_top_view_fig(skid_results, floor_results, overall_dims, ui_inputs)
         fig_front = _create_base_front_view_fig(skid_results, floor_results, overall_dims)
         fig_side = _create_base_side_view_fig(skid_results, floor_results, overall_dims, ui_inputs)
-        if fig_top or fig_front or fig_side:
-            col1, col2, col3 = st.columns(3)
-            with col1: 
-                st.caption("Top View (XY)")
-                if fig_top: st.plotly_chart(fig_top, use_container_width=True)
-                else: st.warning("Could not generate Top View.")
-            with col2: 
-                st.caption("Front View (XZ)")
-                if fig_front: st.plotly_chart(fig_front, use_container_width=True)
-                else: st.warning("Could not generate Front View.")
-            with col3: 
-                st.caption("Side View (YZ)")
-                if fig_side: st.plotly_chart(fig_side, use_container_width=True)
-                else: st.warning("Could not generate Side View.")
-        else: st.warning("No Base Assembly views could be generated.")
-    except Exception as e: st.error(f"Error displaying Base Assembly views: {e}"); log.error(f"Error in display_base_assembly_views:", exc_info=True)
+    except Exception as e:
+        log.error(f"Error generating Base Assembly figures: {e}", exc_info=True)
+        # Return None for any figures that failed
+        if fig_top is None: fig_top = go.Figure() # Return empty figure on error
+        if fig_front is None: fig_front = go.Figure()
+        if fig_side is None: fig_side = go.Figure()
 
-def display_wall_assembly(wall_panel_data, panel_label_base, ui_inputs, overall_dims):
-    assy_label = f"{panel_label_base.upper()} ASSY"; st.markdown(f"#### {assy_label}")
-    if not wall_panel_data or wall_panel_data.get("panel_width", 0) == 0: st.info(f"{assy_label} data invalid or panel width is zero."); return
+    return fig_top, fig_front, fig_side
+
+
+def generate_wall_panel_figures(wall_panel_data, panel_label_base, ui_inputs, overall_dims):
+    """
+    Generates and returns Plotly figure objects for a single Wall Panel's views.
+    Does NOT display them.
+    """
+    fig_front = None
+    fig_profile = None
+    assy_label = f"{panel_label_base.upper()} ASSY" # For logging/errors if any
+
+    if not wall_panel_data or wall_panel_data.get("panel_width", 0) == 0:
+        log.warning(f"{assy_label} figures not generated: Panel data invalid or width is zero.")
+        return None, None # Return tuple of Nones
+
     try:
-        fig_front, error_msg_f = _create_panel_assembly_figure("Front", wall_panel_data, assy_label)
-        fig_profile, error_msg_p = _create_panel_assembly_figure("Profile", wall_panel_data, assy_label)
-        if error_msg_f or error_msg_p: 
-            full_error_msg = f"{error_msg_f if error_msg_f else ''} {error_msg_p if error_msg_p else ''}".strip()
-            st.warning(full_error_msg)
-        if fig_front or fig_profile:
-            col1, col2 = st.columns(2)
-            with col1:
-                if fig_front: st.plotly_chart(fig_front, use_container_width=True)
-                else: st.warning("Could not generate Front View for " + assy_label)
-            with col2:
-                if fig_profile: st.plotly_chart(fig_profile, use_container_width=True)
-                else: st.warning("Could not generate Profile View for " + assy_label)
-        else: st.warning(f"No views could be generated for {assy_label}.")
-        with st.expander("Logic Explanation"):
-             explanation_text = explanations.get_wall_panel_explanation(panel_data=wall_panel_data, panel_type_label=panel_label_base, overall_dims=overall_dims); st.markdown(explanation_text)
-    except Exception as e: st.error(f"Error displaying {assy_label} views: {e}"); log.error(f"Error in display_wall_assembly for {panel_label_base}", exc_info=True)
+        fig_front, error_msg_f = _create_panel_assembly_figure("Front", wall_panel_data, panel_label_base)
+        fig_profile, error_msg_p = _create_panel_assembly_figure("Profile", wall_panel_data, panel_label_base)
+        
+        if error_msg_f: log.warning(f"Error generating Front view for {assy_label}: {error_msg_f}")
+        if error_msg_p: log.warning(f"Error generating Profile view for {assy_label}: {error_msg_p}")
 
-def display_top_panel_assembly(top_panel_data, ui_inputs, overall_dims):
-    assy_label = "TOP PANEL ASSY"; st.markdown(f"#### {assy_label}")
-    if not top_panel_data or top_panel_data.get("status") not in ["OK", "WARNING"]: 
+    except Exception as e:
+        log.error(f"Error generating {assy_label} figures: {e}", exc_info=True)
+        if fig_front is None: fig_front = go.Figure() # Return empty figure on error
+        if fig_profile is None: fig_profile = go.Figure()
+
+    return fig_front, fig_profile
+
+
+def generate_top_panel_figures(top_panel_data, ui_inputs, overall_dims):
+    """
+    Generates and returns Plotly figure objects for the Top Panel Assembly views.
+    Does NOT display them.
+    """
+    fig_front = None
+    fig_profile = None
+    assy_label = "TOP PANEL ASSY"
+
+    if not top_panel_data or top_panel_data.get("status") not in ["OK", "WARNING"]:
         status_msg = top_panel_data.get('status', 'N/A') if top_panel_data else 'N/A'
-        st.info(f"{assy_label} data invalid or calculation not successful (Status: {status_msg})."); return
+        log.warning(f"{assy_label} figures not generated: Data invalid or calculation not successful (Status: {status_msg}).")
+        return None, None
+
     try:
         fig_front, error_msg_f = _create_panel_assembly_figure("Front", top_panel_data, assy_label)
         fig_profile, error_msg_p = _create_panel_assembly_figure("Profile", top_panel_data, assy_label)
-        if error_msg_f or error_msg_p: 
-            full_error_msg = f"{error_msg_f if error_msg_f else ''} {error_msg_p if error_msg_p else ''}".strip()
-            st.warning(full_error_msg)
-        if fig_front or fig_profile:
-            col1, col2 = st.columns(2)
-            with col1:
-                if fig_front: st.plotly_chart(fig_front, use_container_width=True)
-                else: st.warning("Could not generate Front View for " + assy_label)
-            with col2:
-                if fig_profile: st.plotly_chart(fig_profile, use_container_width=True)
-                else: st.warning("Could not generate Profile View for " + assy_label)
-        else: st.warning(f"No views could be generated for {assy_label}.")
-        with st.expander("Logic Explanation"):
-            explanation_text = explanations.get_top_panel_explanation(top_panel_results=top_panel_data, ui_inputs=ui_inputs); st.markdown(explanation_text)
-    except Exception as e: st.error(f"Error displaying {assy_label} views: {e}"); log.error(f"Error in display_top_panel_assembly", exc_info=True)
+
+        if error_msg_f: log.warning(f"Error generating Front view for {assy_label}: {error_msg_f}")
+        if error_msg_p: log.warning(f"Error generating Profile view for {assy_label}: {error_msg_p}")
+
+    except Exception as e:
+        log.error(f"Error generating {assy_label} figures: {e}", exc_info=True)
+        if fig_front is None: fig_front = go.Figure()
+        if fig_profile is None: fig_profile = go.Figure()
+        
+    return fig_front, fig_profile
+
+# --- Old DISPLAY Functions (can be removed or kept for reference, but app.py will handle display) ---
+# def display_base_assembly_views(...):
+# def display_wall_assembly(...):
+# def display_top_panel_assembly(...):
+# These are now effectively handled by app.py, which will call the generate_..._figures functions
+# and then use st.plotly_chart with the results stored in session state.
