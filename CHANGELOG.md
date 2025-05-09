@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [0.6.3] - 2025-05-08 
 
+### Fixed
+- Calculation Summary: Removed custom HTML styling from metric labels in `wizard_app/ui_modules/metrics.py` to resolve an issue where HTML tags were visible and incorrectly formatted. Metric labels are now displayed as plain text for improved readability, with group titles rendered in bold. 
+
 ### Added
 
 - **Regenerate Crate Button:** Added a primary "Regenerate Crate" button to the top of the sidebar (`wizard_app/ui_modules/sidebar.py`). 

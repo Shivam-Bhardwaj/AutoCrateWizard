@@ -1,16 +1,9 @@
-feat: Add product height, overall height calc & multi-view cap viz (v0.4.3)
+Fix: Remove HTML styling from metric labels for readability
 
-This version solidifies the skid and floorboard logic and enhances the cap assembly features.
+Removes custom HTML span-based styling (NX-style labels) from the
+metrics display in `wizard_app/ui_modules/metrics.py`.
 
-Key changes include:
-- Added "Product Actual Height" and "Clearance Above Product" inputs to the Streamlit sidebar.
-- Implemented the calculation and display of "Overall Crate Height (OD)" in the summary metrics.
-- Enhanced Cap Assembly Visualization in `app.py` by adding tabs for:
-    - Top View (existing detailed plan view).
-    - Front View (new orthographic view along cap width).
-    - Side View (new orthographic view along cap length).
-- Updated the application footer text.
-- Renamed some UI input labels for better clarity (e.g., "Clearance Side (Product W/L)", "Framing Cleat Thickness (Side/End Walls)").
-- Updated README.md and CHANGELOG.md to reflect version 0.4.3 features.
-
-This provides a more comprehensive set of inputs and visualizations for the basic crate structure (skid, floorboard, cap).
+This change addresses an issue where HTML tags were being rendered as
+plain text and CSS was appearing malformed in the "Calculation Summary"
+output. Metric labels are now plain text (group titles remain bold
+via Markdown) to ensure they are correctly displayed and readable.
