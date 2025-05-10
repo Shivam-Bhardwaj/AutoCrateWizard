@@ -49,7 +49,7 @@ class PDF(FPDF):
             for col_name in bom_data.columns:
                 self.cell(col_widths.get(col_name, 40), 6, str(row[col_name]), 1, 0, 'L')
             self.ln()
-
+            # TODO make this code more robust. The pdf is not being generated
     def add_plotly_figure_as_image(self, fig: go.Figure, title: str, fig_width_mm: int = 180):
         try:
             img_bytes = fig.to_image(format="png", engine="kaleido", width=800, height=600) # Adjust resolution as needed
