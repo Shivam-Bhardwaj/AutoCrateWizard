@@ -63,7 +63,8 @@ except ImportError:
         CONFIG_IMPORTED = False; APP_INITIALIZATION_SUCCESS = False
 try:
     from . import skid_logic, floorboard_logic, cap_logic, wall_logic, explanations
-    LOGIC_IMPORTED = True; log.info("Imported logic modules (relative)")
+    from . import pdf_generator # ADDED FOR PDF GENERATION
+    LOGIC_IMPORTED = True; log.info("Imported logic modules (relative, including pdf_generator)")
 except ImportError:
     log.warning("Relative logic import failed, trying direct...")
     try:
@@ -71,6 +72,7 @@ except ImportError:
         LOGIC_IMPORTED = True; log.info("Imported logic modules (direct)")
     except ImportError as e:
         log.error(f"CRITICAL: logic modules import failed: {e}", exc_info=True)
+        if 'pdf_generator' in str(e): log.error("pdf_generator module failed to import.")
         LOGIC_IMPORTED = False; APP_INITIALIZATION_SUCCESS = False
 try:
     from .ui_modules import status, metrics, visualizations, details
@@ -482,5 +484,40 @@ if st.session_state.first_data_run_complete:
         st.download_button("📥 Download BOM as CSV", bom_df.to_csv(index=False).encode('utf-8'), csv_fn, 'text/csv', key='download_bom_csv_main')
     elif bom_df is not None: st.info("No components for BOM.")
     else: st.error("BOM data N/A.")
+
+    # --- PDF Report Download Button ---
+    if st.button("📄 Download PDF Report", key="download_pdf_report_main"):
+        if st.session_state.get('bom_dataframe') is not None and \
+           not st.session_state.bom_dataframe.empty and \
+           st.session_state.get('ui_inputs_current') and \
+           LOGIC_IMPORTED and hasattr(pdf_generator, 'create_crate_report'):
+            
+            report_figures = {}
+            figure_keys_titles = {
+                'fig_base_top': "Base Assembly - Top View (XY)",
+                'fig_base_front': "Base Assembly - Front View (XZ)",
+                'fig_base_side': "Base Assembly - Side View (YZ)",
+                'fig_back_panel_front': "Front/Back Assembly - Front View", # Using back_panel for front/back assy
+                'fig_back_panel_profile': "Front/Back Assembly - Profile View",
+                'fig_side_panel_front': "Side Plate Assembly - Front View",
+                'fig_side_panel_profile': "Side Plate Assembly - Profile View",
+                'fig_top_panel_front': "Top Plate Assembly - Front View (XY)",
+                'fig_top_panel_profile': "Top Plate Assembly - Profile View"
+            }
+            for fig_key, fig_title in figure_keys_titles.items():
+                if st.session_state.get(fig_key) is not None:
+                    report_figures[fig_title] = st.session_state.get(fig_key)
+            
+            with st.spinner("Generating PDF report... This may take a moment."):
+                pdf_bytes = pdf_generator.create_crate_report(
+                    st.session_state.bom_dataframe,
+                    report_figures,
+                    st.session_state.ui_inputs_current
+                )
+            pdf_fn = f"AutoCrate_Report_{str(ui_inputs_current.get('product_width','W')).replace('.','_')}W_{str(ui_inputs_current.get('product_length','L')).replace('.','_')}L_{str(ui_inputs_current.get('product_height','H')).replace('.','_')}H.pdf"
+            st.download_button(label="📥 Download Report Now", data=pdf_bytes, file_name=pdf_fn, mime="application/pdf", key="final_pdf_download_button")
+        else:
+            st.warning("BOM data, UI inputs, or PDF generator module not available. Cannot generate report. Please 'Regenerate' first.")
+
     st.caption(f"AutoCrate Wizard v{APP_VERSION}")
 log.info(f"Streamlit app v{APP_VERSION} exec finished.")
