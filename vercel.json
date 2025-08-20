@@ -1,18 +1,8 @@
 {
-  "buildCommand": "npm run build",
-  "devCommand": "npm run dev",
-  "framework": "nextjs",
-  "installCommand": "npm install",
-  "outputDirectory": ".next",
   "functions": {
     "app/api/**/*.ts": {
-      "runtime": "nodejs18.x",
-      "maxDuration": 30
+      "runtime": "@vercel/node"
     }
-  },
-  "env": {
-    "AUTOCRATE_VERSION": "12.1.4-web",
-    "NODE_ENV": "production"
   },
   "headers": [
     {
@@ -31,12 +21,6 @@
           "value": "Content-Type, Authorization"
         }
       ]
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/docs",
-      "destination": "/documentation"
     }
   ]
 }
